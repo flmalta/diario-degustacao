@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diário de Degustação de Tinturas & Bitters</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        
+        /* Animação de Loading */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #4f46e5;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-indigo-900 text-white p-6 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-flask"></i> Laboratório de Tinturas
+                </h1>
+                <p class="text-indigo-200 text-sm mt-1">Sincronizado com Google Drive</p>
+            </div>
+            
+            <div class="flex gap-2">
+                <button onclick="toggleConfig()" class="bg-indigo-800 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg font-medium transition flex items-center gap-2 text-sm border border-indigo-700">
+                    <i class="fa-solid fa-gear"></i> Configurar Drive
+                </button>
+                <button onclick="exportTableToCSV('registro_tinturas.csv')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-sm text-sm">
+                    <i class="fa-solid fa-file-excel"></i> Backup CSV
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Painel de Configuração -->
+    <div id="configPanel" class="hidden bg-indigo-100 border-b border-indigo-200 p-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div class="flex-grow w-full">
+                <label class="block text-xs font-bold text-indigo-900 mb-1 uppercase">URL do Script do Google Sheets</label>
+                <input type="text" id="scriptUrl" placeholder="Cole a URL do Google Script aqui..." class="w-full p-2 border border-indigo-300 rounded text-sm focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <button onclick="saveConfig()" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-indigo-700 mt-4 md:mt-0">Salvar Conexão</button>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-8">
+
+        <!-- STATUS BAR -->
+        <div id="statusMessage" class="hidden rounded-lg p-3 text-sm text-center font-bold"></div>
+
+        <!-- GUIA DE PREPARAÇÃO & PROTOCOLO -->
+        <details class="bg-white rounded-xl shadow-md border-l-4 border-indigo-500 group" open>
+            <summary class="p-6 cursor-pointer flex justify-between items-center hover:bg-slate-50 transition">
+                <h2 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check"></i> Guia, Checklist & Protocolo
+                    <span class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Expandir/Recolher</span>
+                </h2>
+                <span class="text-indigo-500 group-open:rotate-180 transition-transform duration-300">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </span>
+            </summary>
+            
+            <div class="p-6 pt-0 border-t border-slate-100 mt-2">
+                
+                <!-- Parte 1 e 2: Ambiente e Checklist -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 mt-4">
+                    <!-- Coluna 1: O Ambiente -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide border-b pb-1">1. O Ambiente e o Provador</h3>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-ban text-red-400 mt-1"></i>
+                                <span><strong>Zero Perfume:</strong> Não use perfumes ou loções fortes nas mãos.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-mug-hot text-amber-500 mt-1"></i>
+                                <span><strong>Jejum de Sabores:</strong> Evite café, pasta de dente ou comidas picantes 30min antes.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-wind text-indigo-400 mt-1"></i>
+                                <span><strong>Ventilação:</strong> Local ventilado para evitar fadiga olfativa.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-glass-water text-blue-400 mt-1"></i>
+                                <span><strong>Hidratação:</strong> Água abundante para limpar o palato.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Coluna 2: Checklist -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide border-b pb-1">2. Checklist de Materiais</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Copos pequenos</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Conta-gotas</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Água Mineral (30ml/teste)</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Água c/ Gás (60ml/teste)</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Xarope Simples 1:1</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Grãos de Café (Reset)</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Guardanapos neutros</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" class="accent-indigo-600 w-4 h-4 rounded"> Cuspeira (Opcional)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-slate-200 my-6">
+
+                <!-- Parte 3: Protocolo -->
+                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide mb-4">3. Protocolo de Degustação</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Etapa A -->
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex flex-col h-full">
+                        <div class="mb-3 border-b border-indigo-200 pb-2">
+                            <span class="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Etapa A</span>
+                            <h4 class="font-bold text-indigo-900 text-base mt-1">Teste de Pureza</h4>
+                            <p class="text-xs text-indigo-700 italic">Técnica de Fricção</p>
+                        </div>
+                        <ul class="space-y-2 text-xs text-slate-700 flex-grow">
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-indigo-600 rounded"><span>Pingue 1 gota pura na palma da mão.</span></li>
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-indigo-600 rounded"><span>Esfregue vigorosamente para evaporar álcool.</span></li>
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-indigo-600 rounded"><span>Cheire as mãos em concha após 5s.</span></li>
+                        </ul>
+                    </div>
+                    <!-- Etapa B -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col h-full">
+                        <div class="mb-3 border-b border-blue-200 pb-2">
+                            <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Etapa B</span>
+                            <h4 class="font-bold text-blue-900 text-base mt-1">Mapeamento</h4>
+                            <p class="text-xs text-blue-700 italic">Diluição em Água</p>
+                        </div>
+                        <ul class="space-y-2 text-xs text-slate-700 flex-grow">
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-blue-600 rounded"><span>30ml água + 10 gotas.</span></li>
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-blue-600 rounded"><span>Observe Louche (turbidez).</span></li>
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-blue-600 rounded"><span>Bocheche 3s. Avalie corpo e textura.</span></li>
+                        </ul>
+                    </div>
+                    <!-- Etapa C -->
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4 flex flex-col h-full">
+                        <div class="mb-3 border-b border-emerald-200 pb-2">
+                            <span class="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Etapa C</span>
+                            <h4 class="font-bold text-emerald-900 text-base mt-1">Aplicação</h4>
+                            <p class="text-xs text-emerald-700 italic">Simulação de Coquetel</p>
+                        </div>
+                        <ul class="space-y-2 text-xs text-slate-700 flex-grow">
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-emerald-600 rounded"><span>60ml Água c/ Gás + 1 colher Xarope.</span></li>
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-emerald-600 rounded"><span>Adicione 30 gotas (3-4 dashes).</span></li>
+                            <li class="flex gap-2 items-start"><input type="checkbox" class="mt-0.5 w-3 h-3 text-emerald-600 rounded"><span>Decisão: Sumiu? Brilhou? Estragou?</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- FORMULÁRIO -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md border border-slate-200 h-fit sticky top-6">
+                <h2 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Nova Avaliação</h2>
+                
+                <form id="tastingForm" class="space-y-6">
+                    
+                    <!-- Identificação -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome da Tintura</label>
+                        <input type="text" id="nome" placeholder="Ex: Baunilha Bourbon" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data</label>
+                            <input type="date" id="data" class="w-full p-2 border border-slate-300 rounded" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Base</label>
+                            <select id="base" class="w-full p-2 border border-slate-300 rounded">
+                                <option>Vodka</option>
+                                <option>Gin</option>
+                                <option>Rum</option>
+                                <option>Bourbon</option>
+                                <option>Álcool de Cereais</option>
+                                <option>Outro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 1. Ataque -->
+                    <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-700">1. Ataque Aromático</label>
+                            <span id="rangeValue" class="text-xs font-bold bg-slate-200 text-slate-800 px-2 rounded">3</span>
+                        </div>
+                        <input type="range" id="ataque" min="1" max="5" value="3" class="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('rangeValue').innerText = this.value">
+                        <p class="text-[10px] text-slate-500 mt-1 italic">
+                            <i class="fa-solid fa-circle-info mr-1"></i> A primeira impressão ao aproximar o nariz. O álcool agride ou é suave?
+                        </p>
+                    </div>
+
+                    <!-- NOTAS AROMÁTICAS -->
+                    <div class="space-y-4 pt-2 border-t border-slate-100">
+                        <h3 class="font-bold text-sm text-indigo-900">Perfil Aromático (Nariz)</h3>
+                        
+                        <!-- Cabeça -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">2. Notas de Cabeça (Voláteis)</label>
+                            <select id="cabeca" class="w-full p-2 border border-slate-300 rounded bg-white text-sm">
+                                <option value="" disabled selected>O que chega primeiro...</option>
+                                <option value="Cítrico (Limão/Laranja)">Cítrico (Zest/Suco)</option>
+                                <option value="Floral Leve">Floral Leve (Flores brancas)</option>
+                                <option value="Herbáceo Fresco">Herbáceo Fresco (Grama/Menta)</option>
+                                <option value="Especiaria Fria">Especiaria Fria (Cardamomo/Anis)</option>
+                                <option value="Frutado Fresco">Frutado Fresco (Maçã Verde/Pêra)</option>
+                                <option value="Éter/Solvente">Éter/Solvente (Defeito/Cola)</option>
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-1">Dica: São as moléculas mais leves. Evaporam nos primeiros segundos da fricção.</p>
+                        </div>
+
+                        <!-- Coração -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">3. Notas de Coração (Identidade)</label>
+                            <select id="coracao" class="w-full p-2 border border-slate-300 rounded bg-white text-sm">
+                                <option value="" disabled selected>O "corpo" do aroma...</option>
+                                <option value="Especiaria Quente">Especiaria Quente (Canela/Cravo)</option>
+                                <option value="Fruta Madura/Geleia">Fruta Madura/Geleia</option>
+                                <option value="Floral Pesado">Floral Pesado (Rosas/Lavanda)</option>
+                                <option value="Vegetal/Raiz">Vegetal/Raiz</option>
+                                <option value="Nozes/Castanhas">Nozes/Amêndoas</option>
+                                <option value="Cereal/Grão">Cereal/Malte</option>
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-1">Dica: A alma da tintura. Persiste após a evaporação inicial. É o aroma principal.</p>
+                        </div>
+
+                        <!-- Base -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">4. Notas de Base (Fixadores)</label>
+                            <select id="base_nota" class="w-full p-2 border border-slate-300 rounded bg-white text-sm">
+                                <option value="" disabled selected>O que fica no final...</option>
+                                <option value="Madeira/Carvalho">Madeira/Carvalho</option>
+                                <option value="Baunilha/Caramelo">Baunilha/Caramelo</option>
+                                <option value="Terroso/Musgo">Terroso/Musgo</option>
+                                <option value="Resinoso/Pinho">Resinoso/Pinho</option>
+                                <option value="Couro/Tabaco">Couro/Tabaco</option>
+                                <option value="Defumado">Defumado</option>
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-1">Dica: Aromas pesados e ricos que dão sustentação. Duram muito tempo na mão.</p>
+                        </div>
+                    </div>
+
+                    <!-- SENSAÇÃO NA BOCA -->
+                    <div class="space-y-4 pt-2 border-t border-slate-100">
+                        <h3 class="font-bold text-sm text-indigo-900">Na Boca (Paladar)</h3>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">5. Mouthfeel (Tato)</label>
+                                <select id="mouthfeel" class="w-full p-2 border border-slate-300 rounded text-sm">
+                                    <option>Aquoso (Leve)</option>
+                                    <option>Oleoso (Sedoso)</option>
+                                    <option>Cremoso (Denso)</option>
+                                    <option>Adstringente (Seca)</option>
+                                    <option>Picante (Formiga)</option>
+                                    <option>Quente (Alcoólico)</option>
+                                </select>
+                                <p class="text-[10px] text-slate-400 mt-1">Sensação física: É ralo como água ou denso como azeite? Seca a língua?</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">6. Retrogosto (Fim)</label>
+                                <select id="retrogosto" class="w-full p-2 border border-slate-300 rounded text-sm">
+                                    <option>Curto/Limpo</option>
+                                    <option>Médio/Equilibrado</option>
+                                    <option>Longo/Persistente</option>
+                                    <option>Amargo Agressivo</option>
+                                    <option>Doce/Melado</option>
+                                    <option>Metálico (Ruim)</option>
+                                </select>
+                                <p class="text-[10px] text-slate-400 mt-1">O gosto que sobra após engolir. Convida ao próximo gole ou incomoda?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Veredito -->
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-100">
+                        <label class="block text-xs font-bold text-amber-900 uppercase mb-2">7. Veredito Final</label>
+                        <div class="space-y-1">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="decisao" value="Aprovado: Bitters" checked class="text-amber-600">
+                                <span class="text-xs text-slate-700">Aprovado: Bitters (Alta Potência)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="decisao" value="Base para Xarope" class="text-amber-600">
+                                <span class="text-xs text-slate-700">Base para Xarope (Sabor Suave)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="decisao" value="Corrigir" class="text-amber-600">
+                                <span class="text-xs text-slate-700">Corrigir (Falta Ácido/Sal)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="decisao" value="Descarte" class="text-amber-600">
+                                <span class="text-xs text-slate-700">Descarte (Defeito Irreversível)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Obs -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">8. Observações</label>
+                        <textarea id="observacoes" rows="2" class="w-full p-2 border border-slate-300 rounded text-sm" placeholder="Ex: Notas de prova detalhadas, ideias de drinks..."></textarea>
+                    </div>
+                    
+                    <button type="button" id="submitBtn" onclick="submitData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition shadow-md flex justify-center items-center gap-2">
+                        <span>Salvar (App + Drive)</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- TABELA -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                    <div class="p-4 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700">Histórico Recente</h3>
+                        <button onclick="clearTable()" class="text-xs text-red-500 hover:text-red-700">Limpar</button>
+                    </div>
+                    <div class="overflow-x-auto max-h-[600px]">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3">Nome</th>
+                                    <th class="px-4 py-3">Perfil Aromático</th>
+                                    <th class="px-4 py-3">Veredito</th>
+                                    <th class="px-4 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tastingTableBody">
+                                <tr id="emptyRow" class="bg-white border-b">
+                                    <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">
+                                        Seus registros aparecerão aqui.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // =================================================================
+        // CONFIGURAÇÃO: COLE SUA URL AQUI DENTRO DAS ASPAS
+        // Exemplo: const MINHA_URL_DO_SCRIPT = "https://script.google.com/...";
+        // =================================================================
+        const MINHA_URL_DO_SCRIPT = "https://script.google.com/macros/s/AKfycbzve8_M6yra49t4lCoj0HxTidwpZCkJVVaCzWsYAY7RLwUCi5nrEaiqroFOAHRsV3k6VQ/exec"; 
+        // =================================================================
+
+        document.getElementById('data').valueAsDate = new Date();
+
+        window.onload = function() {
+            // Se o usuário colocou a URL no código, usa ela com prioridade
+            if(MINHA_URL_DO_SCRIPT && MINHA_URL_DO_SCRIPT.length > 5) {
+                localStorage.setItem('googleScriptUrl', MINHA_URL_DO_SCRIPT);
+                document.getElementById('scriptUrl').value = MINHA_URL_DO_SCRIPT;
+            } else {
+                // Senão, tenta ler do localStorage
+                const savedUrl = localStorage.getItem('googleScriptUrl');
+                if(savedUrl) {
+                    document.getElementById('scriptUrl').value = savedUrl;
+                } else {
+                    document.getElementById('configPanel').classList.remove('hidden');
+                }
+            }
+        }
+
+        function toggleConfig() {
+            document.getElementById('configPanel').classList.toggle('hidden');
+        }
+
+        function saveConfig() {
+            const url = document.getElementById('scriptUrl').value;
+            if(url) {
+                localStorage.setItem('googleScriptUrl', url);
+                alert('URL Salva com Sucesso!');
+                toggleConfig();
+            }
+        }
+
+        function submitData() {
+            const form = document.getElementById('tastingForm');
+            if(!form.checkValidity()) {
+                alert("Preencha o nome da tintura.");
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader"></div> Enviando...';
+            btn.disabled = true;
+
+            const formData = {
+                nome: document.getElementById('nome').value,
+                data: document.getElementById('data').value,
+                base: document.getElementById('base').value,
+                ataque: document.getElementById('ataque').value,
+                cabeca: document.getElementById('cabeca').value || "-",
+                coracao: document.getElementById('coracao').value || "-",
+                base_nota: document.getElementById('base_nota').value || "-",
+                mouthfeel: document.getElementById('mouthfeel').value,
+                retrogosto: document.getElementById('retrogosto').value,
+                decisao: document.querySelector('input[name="decisao"]:checked').value,
+                observacoes: document.getElementById('observacoes').value || ""
+            };
+
+            addToTable(formData, "Pendente...");
+
+            // Tenta pegar a URL do código primeiro, depois do storage
+            let scriptUrl = MINHA_URL_DO_SCRIPT;
+            if(!scriptUrl || scriptUrl.length < 5) {
+                scriptUrl = localStorage.getItem('googleScriptUrl');
+            }
+
+            if (scriptUrl) {
+                fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(formData)
+                })
+                .then(() => {
+                    updateLastRowStatus('<span class="text-green-600 font-bold"><i class="fa-solid fa-check"></i> Salvo</span>');
+                    showStatus("Sucesso! Salvo no Drive.", "bg-green-100 text-green-800");
+                    resetForm();
+                })
+                .catch(error => {
+                    updateLastRowStatus('<span class="text-red-500">Erro</span>');
+                    showStatus("Erro na conexão.", "bg-red-100 text-red-800");
+                })
+                .finally(() => {
+                    btn.innerHTML = originalBtnText;
+                    btn.disabled = false;
+                });
+            } else {
+                updateLastRowStatus('<span class="text-slate-400">Local</span>');
+                showStatus("Salvo localmente.", "bg-amber-100 text-amber-800");
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+                resetForm();
+            }
+        }
+
+        function addToTable(data, status) {
+            const emptyRow = document.getElementById('emptyRow');
+            if(emptyRow) emptyRow.remove();
+
+            const tableBody = document.getElementById('tastingTableBody');
+            const newRow = document.createElement('tr');
+            newRow.className = "bg-white border-b hover:bg-indigo-50 transition";
+            
+            newRow.innerHTML = `
+                <td class="px-4 py-3 font-medium text-slate-900">
+                    ${data.nome}<br>
+                    <span class="text-xs text-slate-500 font-normal">${data.data} | ${data.base}</span>
+                </td>
+                <td class="px-4 py-3 text-xs">
+                    <div><strong>Ataque:</strong> ${data.ataque}</div>
+                    <div><strong>Topo:</strong> ${data.cabeca}</div>
+                    <div><strong>Corpo:</strong> ${data.coracao}</div>
+                    <div><strong>Base:</strong> ${data.base_nota}</div>
+                    <div><strong>Mouthfeel:</strong> ${data.mouthfeel}</div>
+                    <div><strong>Retrogosto:</strong> ${data.retrogosto}</div>
+                    <div><strong>Observações:</strong> ${data.observacoes}</div>
+                </td>
+                <td class="px-4 py-3 text-xs font-bold text-indigo-700">
+                    ${data.decisao.split(':')[0]}
+                </td>
+                <td class="px-4 py-3 text-xs status-cell">
+                    ${status}
+                </td>
+            `;
+            tableBody.insertBefore(newRow, tableBody.firstChild);
+        }
+
+        function updateLastRowStatus(html) {
+            const rows = document.getElementById('tastingTableBody').rows;
+            if(rows.length > 0) rows[0].querySelector('.status-cell').innerHTML = html;
+        }
+
+        function showStatus(msg, classes) {
+            const el = document.getElementById('statusMessage');
+            el.className = `p-3 rounded-lg text-sm text-center font-bold mb-4 ${classes}`;
+            el.innerText = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 4000);
+        }
+
+        function resetForm() {
+            document.getElementById('nome').value = '';
+            document.getElementById('observacoes').value = '';
+            document.getElementById('nome').focus();
+        }
+
+        function clearTable() {
+            if(confirm('Limpar histórico local?')) {
+                document.getElementById('tastingTableBody').innerHTML = '<tr id="emptyRow" class="bg-white border-b"><td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">Vazio.</td></tr>';
+            }
+        }
+        
+        function exportTableToCSV(filename) {
+            alert("Backup CSV em desenvolvimento.");
+        }
+    </script>
+</body>
+</html>
